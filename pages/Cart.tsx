@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Wallet, MapPin, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, CheckCircle, Wallet, MapPin, Loader2, CreditCard } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { Order } from '../types';
 import { BANGLADESH_DISTRICTS } from '../constants';
@@ -23,7 +23,7 @@ const NagadLogo = () => (
 );
 
 export const Cart: React.FC = () => {
-  const { cart, removeFromCart, updateCartQuantity, settings, clearCart, addOrder } = useApp();
+  const { cart, removeFromCart, updateCartQuantity, settings, clearCart, addOrder, t, language } = useApp();
   const [isOrdered, setIsOrdered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState<'inside' | 'outside'>('inside');
@@ -37,7 +37,6 @@ export const Cart: React.FC = () => {
     paymentNumber: '',
     trxId: ''
   });
-  const navigate = useNavigate();
 
   const subtotal = cart.reduce((sum, item) => sum + (item.salePrice || item.price) * item.quantity, 0);
   const shipping = deliveryLocation === 'inside' ? 70 : 120;
@@ -106,23 +105,21 @@ export const Cart: React.FC = () => {
           <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
             <CheckCircle size={40} />
           </div>
-          <h2 className="text-3xl font-bold mb-4">Order Placed Successfully!</h2>
-          <p className="text-slate-500 mb-8">
-            Thank you for shopping with {settings.siteName}. We've received your order and will contact you shortly to confirm.
-          </p>
+          <h2 className="text-3xl font-bold mb-4">{t('orderPlaced')}</h2>
+          <p className="text-slate-500 mb-8">{t('orderPlacedText')}</p>
           <div className="bg-slate-50 p-6 rounded-2xl w-full mb-8 text-left space-y-2 border border-slate-100">
-            <p className="text-sm font-bold text-slate-800">Payment Method: <span className="text-violet-600 font-bold uppercase">{paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod}</span></p>
+            <p className="text-sm font-bold text-slate-800">{t('paymentMethod')}: <span className="text-violet-600 font-bold uppercase">{paymentMethod === 'cod' ? t('cod') : t(paymentMethod as any)}</span></p>
             {paymentMethod !== 'cod' && (
               <p className="text-sm text-slate-600">Trx ID: <span className="font-mono font-bold">{formData.trxId}</span></p>
             )}
             <p className="text-xs text-slate-500 italic mt-2">
               {paymentMethod === 'cod' 
                 ? 'Please keep the exact amount ready upon delivery.' 
-                : 'Our team will verify your transaction shortly.'}
+                : t('verifyTransaction')}
             </p>
           </div>
           <Link to="/shop" className="bg-violet-600 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-violet-700 transition-all">
-            Continue Shopping
+            {t('startShopping')}
           </Link>
         </div>
       </div>
@@ -134,10 +131,10 @@ export const Cart: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-24 text-center">
         <div className="bg-white p-16 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center">
           <ShoppingBag size={64} className="text-slate-200 mb-6" />
-          <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-          <p className="text-slate-500 mb-8 max-w-sm">Looks like you haven't added any elegant pieces to your cart yet.</p>
+          <h2 className="text-2xl font-bold mb-4">{t('emptyCart')}</h2>
+          <p className="text-slate-500 mb-8 max-w-sm">{t('emptyCartText')}</p>
           <Link to="/shop" className="bg-violet-600 text-white px-8 py-3 rounded-full font-bold hover:bg-violet-700 transition-all">
-            Start Shopping
+            {t('startShopping')}
           </Link>
         </div>
       </div>
@@ -146,35 +143,35 @@ export const Cart: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <Link to="/shop" className="inline-flex items-center gap-2 text-slate-500 hover:text-violet-600 mb-8 font-medium">
-        <ArrowLeft size={18} /> Back to Shop
+      <Link to="/shop" className="inline-flex items-center gap-2 text-slate-500 hover:text-violet-600 mb-8 font-medium transition-colors">
+        <ArrowLeft size={18} /> {t('backToShop')}
       </Link>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
-          <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold mb-8">{t('shoppingCart')}</h1>
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-6 divide-y divide-slate-100">
               {cart.map(item => (
                 <div key={item.id} className="py-6 flex gap-6">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-50 flex-shrink-0 border border-slate-100">
                     <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between items-start">
                       <h3 className="font-bold text-slate-800">{item.name}</h3>
-                      <button onClick={() => removeFromCart(item.id)} className="text-slate-400 hover:text-rose-500 transition-colors p-1">
+                      <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-1">
                         <Trash2 size={18} />
                       </button>
                     </div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">{item.category}</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{item.category}</p>
                     <div className="flex justify-between items-end mt-4">
-                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden">
-                        <button onClick={() => updateCartQuantity(item.id, Math.max(1, item.quantity - 1))} className="p-2 hover:bg-slate-50 text-slate-500">
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                        <button onClick={() => updateCartQuantity(item.id, Math.max(1, item.quantity - 1))} className="p-2 hover:bg-slate-200 text-slate-500 transition-colors">
                           <Minus size={14} />
                         </button>
                         <span className="w-10 text-center font-bold text-sm">{item.quantity}</span>
-                        <button onClick={() => updateCartQuantity(item.id, item.quantity + 1)} className="p-2 hover:bg-slate-50 text-slate-500">
+                        <button onClick={() => updateCartQuantity(item.id, item.quantity + 1)} className="p-2 hover:bg-slate-200 text-slate-500 transition-colors">
                           <Plus size={14} />
                         </button>
                       </div>
@@ -188,64 +185,76 @@ export const Cart: React.FC = () => {
 
           <div className="bg-violet-50 p-6 rounded-3xl border border-violet-100">
             <h3 className="font-bold text-violet-900 mb-4 flex items-center gap-2">
-              <MapPin size={20} /> Shipping Destination
+              <MapPin size={20} /> {t('shippingInfo')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => setDeliveryLocation('inside')}
-                className={`p-4 rounded-2xl border-2 transition-all text-left ${deliveryLocation === 'inside' ? 'border-violet-600 bg-white shadow-md' : 'border-transparent bg-slate-100'}`}
+                className={`p-4 rounded-2xl border-2 transition-all text-left group ${deliveryLocation === 'inside' ? 'border-violet-600 bg-white shadow-md' : 'border-transparent bg-slate-100 hover:bg-slate-200'}`}
               >
-                <p className="font-bold text-sm">Inside Dhaka</p>
-                <p className="text-xs text-slate-500">Delivery Charge: ৳70</p>
+                <p className="font-bold text-sm text-slate-900 group-hover:text-violet-600 transition-colors">{t('insideDhaka')}</p>
+                <p className="text-xs text-slate-500">Charge: ৳70</p>
               </button>
               <button
                 onClick={() => setDeliveryLocation('outside')}
-                className={`p-4 rounded-2xl border-2 transition-all text-left ${deliveryLocation === 'outside' ? 'border-violet-600 bg-white shadow-md' : 'border-transparent bg-slate-100'}`}
+                className={`p-4 rounded-2xl border-2 transition-all text-left group ${deliveryLocation === 'outside' ? 'border-violet-600 bg-white shadow-md' : 'border-transparent bg-slate-100 hover:bg-slate-200'}`}
               >
-                <p className="font-bold text-sm">Outside Dhaka</p>
-                <p className="text-xs text-slate-500">Delivery Charge: ৳120</p>
+                <p className="font-bold text-sm text-slate-900 group-hover:text-violet-600 transition-colors">{t('outsideDhaka')}</p>
+                <p className="text-xs text-slate-500">Charge: ৳120</p>
               </button>
             </div>
           </div>
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-6">
-            <h3 className="text-xl font-bold">Order Details</h3>
+          <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 space-y-6">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <CreditCard size={20} className="text-violet-600" /> {t('orderDetails')}
+            </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
-                  <input required type="text" className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500/20 text-sm" placeholder="e.g. Abdullah Al Mamun" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('fullName')}</label>
+                  <input required type="text" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/20 text-sm" placeholder={t('namePlaceholder')} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Phone Number</label>
-                  <input required type="tel" className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500/20 text-sm" placeholder="01XXXXXXXXX" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('phoneNumber')}</label>
+                  <input required type="tel" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/20 text-sm font-mono" placeholder={t('phonePlaceholder')} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">District</label>
-                  <select required className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500/20 text-sm appearance-none" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})}>
-                    {BANGLADESH_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('district')}</label>
+                  <div className="relative">
+                    <select required className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/20 text-sm appearance-none cursor-pointer" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})}>
+                      <option value="" disabled>{t('districtPlaceholder')}</option>
+                      {BANGLADESH_DISTRICTS.map(d => (
+                        <option key={d.en} value={d.en}>
+                          {language === 'bn' ? d.bn : d.en}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                       <Plus size={14} className="rotate-45" />
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Full Address</label>
-                  <textarea required rows={2} className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500/20 text-sm resize-none" placeholder="House,road,thana,district" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">{t('fullAddress')}</label>
+                  <textarea required rows={2} className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/20 text-sm resize-none" placeholder={t('addressPlaceholder')} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
                 </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Payment Method</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">{t('paymentMethod')}</label>
                 <div className="grid grid-cols-1 gap-2">
-                  <button type="button" onClick={() => setPaymentMethod('cod')} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'cod' ? 'border-violet-600 bg-violet-50' : 'border-slate-100'}`}>
-                    <Wallet size={18} className={paymentMethod === 'cod' ? 'text-violet-600' : 'text-slate-400'} />
-                    <span className="text-sm font-bold">Cash on Delivery</span>
+                  <button type="button" onClick={() => setPaymentMethod('cod')} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all ${paymentMethod === 'cod' ? 'border-violet-600 bg-violet-50 shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
+                    <Wallet size={20} className={paymentMethod === 'cod' ? 'text-violet-600' : 'text-slate-400'} />
+                    <span className="text-sm font-bold">{t('cod')}</span>
                   </button>
-                  <button type="button" onClick={() => setPaymentMethod('bkash')} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'bkash' ? 'border-[#e2136e] bg-[#fdf2f7]' : 'border-slate-100'}`}>
+                  <button type="button" onClick={() => setPaymentMethod('bkash')} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all ${paymentMethod === 'bkash' ? 'border-[#e2136e] bg-[#fdf2f7] shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
                     <BkashLogo />
                     <span className="text-sm font-bold">Bkash</span>
                   </button>
-                  <button type="button" onClick={() => setPaymentMethod('nagad')} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'nagad' ? 'border-[#f7941d] bg-[#fffbf5]' : 'border-slate-100'}`}>
+                  <button type="button" onClick={() => setPaymentMethod('nagad')} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all ${paymentMethod === 'nagad' ? 'border-[#f7941d] bg-[#fffbf5] shadow-sm' : 'border-slate-100 hover:border-slate-200'}`}>
                     <NagadLogo />
                     <span className="text-sm font-bold">Nagad</span>
                   </button>
@@ -253,40 +262,48 @@ export const Cart: React.FC = () => {
               </div>
 
               {(paymentMethod === 'bkash' || paymentMethod === 'nagad') && (
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 animate-in fade-in slide-in-from-top-2">
-                  <p className="text-[11px] text-slate-600 font-medium">
-                    Please <span className="font-bold text-slate-900">Send Money</span> to <span className="text-violet-600 font-bold">017XXXXXXXX</span> and provide details below:
-                  </p>
+                <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-200 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="flex items-center gap-2 mb-1">
+                     <p className="text-[11px] text-slate-600 font-bold uppercase tracking-wider">
+                       {t('sendMoneyTo')}:
+                     </p>
+                     <span className="text-violet-600 font-bold text-sm font-mono">{paymentMethod === 'bkash' ? settings.bkashNumber : settings.nagadNumber}</span>
+                  </div>
                   <div className="space-y-3">
-                    <input required type="tel" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" placeholder={`Your ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)} Number`} value={formData.paymentNumber} onChange={e => setFormData({...formData, paymentNumber: e.target.value})} />
-                    <input required type="text" className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm" placeholder="Transaction ID (Trx ID)" value={formData.trxId} onChange={e => setFormData({...formData, trxId: e.target.value})} />
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('paymentMethod')} No.</label>
+                      <input required type="tel" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-violet-500/10" placeholder={t('paymentNumberPlaceholder')} value={formData.paymentNumber} onChange={e => setFormData({...formData, paymentNumber: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('trxPlaceholder')}</label>
+                      <input required type="text" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-violet-500/10" placeholder={t('trxPlaceholder')} value={formData.trxId} onChange={e => setFormData({...formData, trxId: e.target.value})} />
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div className="pt-6 space-y-3">
+              <div className="pt-6 space-y-3 px-1">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Subtotal</span>
-                  <span className="font-bold">৳{subtotal}</span>
+                  <span className="text-slate-500 font-medium">{t('subtotal')}</span>
+                  <span className="font-bold text-slate-800">৳{subtotal}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Shipping ({deliveryLocation === 'inside' ? 'Inside Dhaka' : 'Outside Dhaka'})</span>
-                  <span className="font-bold">৳{shipping}</span>
+                  <span className="text-slate-500 font-medium">{t('shipping')}</span>
+                  <span className="font-bold text-slate-800">৳{shipping}</span>
                 </div>
-                <div className="border-t border-slate-100 pt-4 flex justify-between">
-                  <span className="font-bold text-lg">Order Total</span>
-                  <span className="font-bold text-lg text-violet-600">৳{total}</span>
+                <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
+                  <span className="font-bold text-lg text-slate-900">{t('orderTotal')}</span>
+                  <span className="font-bold text-2xl text-violet-600">৳{total}</span>
                 </div>
               </div>
 
               <button 
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-violet-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-violet-700 transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-violet-600 text-white py-5 rounded-2xl font-bold shadow-xl shadow-violet-600/30 hover:bg-violet-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 mt-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isSubmitting ? <><Loader2 className="animate-spin" size={20} /> Processing...</> : 'Confirm Order'}
+                {isSubmitting ? <><Loader2 className="animate-spin" size={20} /> Processing...</> : <><CheckCircle size={20} /> {t('confirmOrder')}</>}
               </button>
-              <p className="text-[10px] text-center text-slate-400">Secure checkout powered by {settings.siteName}</p>
             </form>
           </div>
         </div>

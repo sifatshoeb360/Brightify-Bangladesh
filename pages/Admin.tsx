@@ -5,20 +5,35 @@ import {
   LayoutDashboard, ShoppingBag, Settings, Edit, Trash2, Plus, 
   CheckCircle, Package, Lock, LogOut, Eye, EyeOff, Users, 
   UserPlus, ExternalLink, X, Image as ImageIcon, Sparkles, Hash,
-  Mail, Key, ShieldAlert, Loader2, BookOpen, FileText
+  Mail, Key, ShieldAlert, Loader2, BookOpen, FileText, Tags, Wallet
 } from 'lucide-react';
-import { Moderator, Product, BlogPost } from '../types';
+import { Moderator, Product, BlogPost, Category } from '../types';
 import { Link } from 'react-router-dom';
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'moderators' | 'settings' | 'blog'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'categories' | 'orders' | 'moderators' | 'settings' | 'blog'>('dashboard');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'moderator' | null>(null);
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   
-  const { products, setProducts, orders, submissions, settings, setSettings, categories, blogPosts, setBlogPosts } = useApp();
+  const { 
+    products, setProducts, 
+    categories, setCategories, 
+    orders, submissions, 
+    settings, setSettings, 
+    blogPosts, setBlogPosts 
+  } = useApp();
+
+  // Category Form Modal State
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState<Partial<Category>>({
+    name: '',
+    image: '',
+    slug: ''
+  });
 
   // Auth Recovery State
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -34,7 +49,7 @@ export const Admin: React.FC = () => {
     price: 0,
     salePrice: undefined,
     description: '',
-    category: 'Lighting',
+    category: '',
     images: ['', '', '', ''],
     stock: 10,
     isFeatured: false,
@@ -82,8 +97,7 @@ export const Admin: React.FC = () => {
       setUserRole('moderator');
       sessionStorage.setItem('adminAuth', 'true');
       sessionStorage.setItem('adminRole', 'moderator');
-      // Force moderator to a safe tab
-      setActiveTab('dashboard');
+      setActiveTab('dashboard'); // Default to a safe tab
       setError('');
     } else {
       setError('Invalid password. Access Denied.');
@@ -98,16 +112,58 @@ export const Admin: React.FC = () => {
     setLoginPassword('');
   };
 
+  // RBAC Navigation Logic
+  // Moderator: Dashboard, Products, Blog
+  // Admin: Dashboard, Products, Categories, Orders, Blog, Moderators, Settings
+  const menuItems = [
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, role: 'any' },
+    { id: 'products', label: 'Products', icon: ShoppingBag, role: 'any' },
+    { id: 'categories', label: 'Categories', icon: Tags, role: 'admin' },
+    { id: 'orders', label: 'Orders', icon: Package, role: 'admin' },
+    { id: 'blog', label: 'Blog Posts', icon: BookOpen, role: 'any' },
+    { id: 'moderators', label: 'Moderators', icon: Users, role: 'admin' },
+    { id: 'settings', label: 'Store Settings', icon: Settings, role: 'admin' },
+  ].filter(item => item.role === 'any' || (item.role === 'admin' && userRole === 'admin'));
+
+  // Category Handlers
+  const openAddCategoryModal = () => {
+    if (userRole !== 'admin') return;
+    setEditingCategoryId(null);
+    setCategoryFormData({ name: '', image: '', slug: '' });
+    setIsCategoryModalOpen(true);
+  };
+
+  const openEditCategoryModal = (cat: Category) => {
+    if (userRole !== 'admin') return;
+    setEditingCategoryId(cat.id);
+    setCategoryFormData({ ...cat });
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const slug = categoryFormData.name?.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '') || Date.now().toString();
+    
+    if (editingCategoryId) {
+      setCategories(prev => prev.map(c => c.id === editingCategoryId ? { ...c, ...categoryFormData, slug } as Category : c));
+    } else {
+      const newCat: Category = { ...categoryFormData as Category, id: Date.now().toString(), slug };
+      setCategories(prev => [...prev, newCat]);
+    }
+    setIsCategoryModalOpen(false);
+  };
+
+  const handleDeleteCategory = (id: string) => {
+    if (userRole !== 'admin') return;
+    if (confirm('Are you sure? Products in this category might appear uncategorized.')) {
+      setCategories(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
   // Blog Handlers
   const openAddBlogModal = () => {
     setEditingBlogId(null);
-    setBlogFormData({ 
-      title: '', 
-      content: '', 
-      images: ['', '', '', ''], 
-      author: userRole === 'admin' ? 'Admin' : 'Moderator', 
-      tags: [] 
-    });
+    setBlogFormData({ title: '', content: '', images: ['', '', '', ''], author: userRole === 'admin' ? 'Admin' : 'Moderator', tags: [] });
     setIsBlogModalOpen(true);
   };
 
@@ -127,28 +183,11 @@ export const Admin: React.FC = () => {
     if (editingBlogId) {
       setBlogPosts(prev => prev.map(b => b.id === editingBlogId ? { ...b, ...blogFormData, slug, images: finalImages } as BlogPost : b));
     } else {
-      const newPost: BlogPost = {
-        ...blogFormData as BlogPost,
-        id: Date.now().toString(),
-        slug,
-        images: finalImages,
-        date: new Date().toLocaleDateString(),
-        excerpt: blogFormData.content?.substring(0, 100) + '...'
-      };
+      const newPost: BlogPost = { ...blogFormData as BlogPost, id: Date.now().toString(), slug, images: finalImages, date: new Date().toLocaleDateString(), excerpt: blogFormData.content?.substring(0, 100) + '...' };
       setBlogPosts(prev => [newPost, ...prev]);
     }
     setIsBlogModalOpen(false);
   };
-
-  // RBAC Filtered Navigation
-  const menuItems = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, role: 'any' },
-    { id: 'products', label: 'Products', icon: ShoppingBag, role: 'any' },
-    { id: 'orders', label: 'Orders', icon: Package, role: 'admin' },
-    { id: 'blog', label: 'Blog Posts', icon: BookOpen, role: 'any' },
-    { id: 'moderators', label: 'Moderators', icon: Users, role: 'admin' },
-    { id: 'settings', label: 'Store Settings', icon: Settings, role: 'admin' },
-  ].filter(item => item.role === 'any' || (item.role === 'admin' && userRole === 'admin'));
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,6 +201,7 @@ export const Admin: React.FC = () => {
 
   const handleAddModerator = (e: React.FormEvent) => {
     e.preventDefault();
+    if (userRole !== 'admin') return;
     if (!modName || !modPassword) return;
     const newMod: Moderator = { id: Date.now().toString(), name: modName, password: modPassword, createdAt: new Date().toLocaleDateString() };
     setSettings({ ...settings, moderators: [...(settings.moderators || []), newMod] });
@@ -169,6 +209,7 @@ export const Admin: React.FC = () => {
   };
 
   const removeModerator = (id: string) => {
+    if (userRole !== 'admin') return;
     if (confirm('Permanently remove this moderator?')) {
       setSettings({ ...settings, moderators: settings.moderators.filter(m => m.id !== id) });
     }
@@ -183,7 +224,7 @@ export const Admin: React.FC = () => {
 
   const openAddModal = () => {
     setEditingProductId(null);
-    setProductFormData({ name: '', price: 0, salePrice: undefined, description: '', category: 'Lighting', images: ['', '', '', ''], stock: 10, isFeatured: false, isNewArrival: true, tags: [] });
+    setProductFormData({ name: '', price: 0, salePrice: undefined, description: '', category: categories[0]?.name || '', images: ['', '', '', ''], stock: 10, isFeatured: false, isNewArrival: true, tags: [] });
     setIsProductModalOpen(true);
   };
 
@@ -226,7 +267,7 @@ export const Admin: React.FC = () => {
         <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-12">
           <div className="text-center mb-10">
             <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-6 shadow-lg overflow-hidden border border-slate-100">
-               <img src="https://i.ibb.co/v4ynLLwk/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+               <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Admin Portal</h1>
             <p className="text-slate-500">{isRecoveryMode ? 'Account Recovery' : 'Secure Authorization'}</p>
@@ -299,7 +340,7 @@ export const Admin: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex">
       <aside className="w-64 bg-slate-900 text-slate-400 p-6 space-y-8 hidden md:flex flex-col border-r border-slate-800">
         <Link to="/" className="flex items-center gap-3">
-          <img src="https://i.ibb.co/v4ynLLwk/logo.jpg" alt="Logo" className="w-8 h-8 rounded-lg object-cover brightness-200" />
+          <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-cover brightness-200" />
           <span className="text-white font-bold text-xl tracking-tight">Brightify BD</span>
         </Link>
         <nav className="space-y-2 flex-1">
@@ -344,7 +385,7 @@ export const Admin: React.FC = () => {
               <StatCard title="Total Revenue" value={`৳${orders.reduce((sum, o) => sum + o.total, 0)}`} color="bg-emerald-50 text-emerald-600" />
               <StatCard title="Orders" value={orders.length} color="bg-blue-50 text-blue-600" />
               <StatCard title="Products" value={products.length} color="bg-violet-50 text-violet-600" />
-              <StatCard title="Inquiries" value={submissions.length} color="bg-amber-50 text-amber-600" />
+              <StatCard title="Categories" value={categories.length} color="bg-amber-50 text-amber-600" />
             </div>
           </div>
         )}
@@ -362,6 +403,7 @@ export const Admin: React.FC = () => {
                 <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
                   <tr>
                     <th className="px-8 py-4">Item</th>
+                    <th className="px-8 py-4">Category</th>
                     <th className="px-8 py-4">Price</th>
                     <th className="px-8 py-4">Stock</th>
                     <th className="px-8 py-4 text-right">Action</th>
@@ -374,6 +416,7 @@ export const Admin: React.FC = () => {
                         <img src={p.images[0]} className="w-12 h-12 rounded-xl object-cover" />
                         <span className="font-bold">{p.name}</span>
                       </td>
+                      <td className="px-8 py-5 text-sm text-slate-500">{p.category}</td>
                       <td className="px-8 py-5 font-bold">৳{p.salePrice || p.price}</td>
                       <td className="px-8 py-5">
                          <span className="px-2 py-1 bg-slate-100 rounded text-xs font-bold">{p.stock} units</span>
@@ -427,7 +470,71 @@ export const Admin: React.FC = () => {
           </div>
         )}
 
-        {/* Admin-only Tabs Protection */}
+        {/* Restricted Admin-Only Modules */}
+        {activeTab === 'categories' && userRole === 'admin' && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-lg">Category Management</h3>
+              <button onClick={openAddCategoryModal} className="flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-violet-700 transition-colors">
+                <Plus size={18} /> New Category
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                  <tr>
+                    <th className="px-8 py-4">Preview</th>
+                    <th className="px-8 py-4">Name</th>
+                    <th className="px-8 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {categories.map(cat => (
+                    <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-8 py-5">
+                        <img src={cat.image} className="w-16 h-16 rounded-xl object-cover border border-slate-100" />
+                      </td>
+                      <td className="px-8 py-5 font-bold">{cat.name}</td>
+                      <td className="px-8 py-5 text-right flex justify-end gap-2">
+                         <button onClick={() => openEditCategoryModal(cat)} className="p-2 text-slate-400 hover:text-violet-600 transition-colors"><Edit size={18} /></button>
+                         <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors"><Trash2 size={18} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'orders' && userRole === 'admin' && (
+           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+             <div className="p-8 border-b border-slate-100"><h3 className="font-bold text-lg">Customer Orders</h3></div>
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                 <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                   <tr>
+                     <th className="px-8 py-4">ID</th>
+                     <th className="px-8 py-4">Customer</th>
+                     <th className="px-8 py-4">Total</th>
+                     <th className="px-8 py-4">Status</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-100">
+                   {orders.map(o => (
+                     <tr key={o.id} className="hover:bg-slate-50/50">
+                       <td className="px-8 py-5 text-sm font-mono text-violet-600">{o.id}</td>
+                       <td className="px-8 py-5"><p className="font-bold">{o.customerName}</p><p className="text-xs text-slate-400">{o.date}</p></td>
+                       <td className="px-8 py-5 font-bold">৳{o.total}</td>
+                       <td className="px-8 py-5"><span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-bold uppercase">{o.status}</span></td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+        )}
+
         {activeTab === 'moderators' && userRole === 'admin' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
@@ -461,82 +568,173 @@ export const Admin: React.FC = () => {
         )}
 
         {activeTab === 'settings' && userRole === 'admin' && (
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-             <h3 className="text-xl font-bold mb-8">Store Settings</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <div>
-                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Store Name</label>
-                   <input className="w-full p-4 bg-slate-50 border-none rounded-2xl" value={settings.siteName} onChange={e => setSettings({...settings, siteName: e.target.value})} />
-                </div>
-                <div>
-                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Admin Password</label>
-                   <input className="w-full p-4 bg-slate-50 border-none rounded-2xl" value={settings.adminPassword} onChange={e => setSettings({...settings, adminPassword: e.target.value})} />
-                </div>
-             </div>
-             <button className="w-full purple-gradient text-white py-4 rounded-2xl font-bold">Update Synchronize</button>
+          <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+               <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800">
+                 <Sparkles className="text-violet-600" size={24} /> Branding & Identity
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Store Name</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="Brightify BD" value={settings.siteName} onChange={e => setSettings({...settings, siteName: e.target.value})} />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Admin Password</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="••••••••" value={settings.adminPassword} onChange={e => setSettings({...settings, adminPassword: e.target.value})} />
+                  </div>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  <div className="space-y-4">
+                     <div>
+                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Website Logo URL</label>
+                       <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="Paste image link here..." value={settings.logoUrl} onChange={e => setSettings({...settings, logoUrl: e.target.value})} />
+                     </div>
+                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center h-24">
+                        <img src={settings.logoUrl} alt="Preview" className="max-h-full rounded-lg" />
+                     </div>
+                  </div>
+                  <div className="space-y-4">
+                     <div>
+                       <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Homepage Hero Image URL</label>
+                       <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="Paste hero image link..." value={settings.heroImage} onChange={e => setSettings({...settings, heroImage: e.target.value})} />
+                     </div>
+                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center h-24 overflow-hidden">
+                        <img src={settings.heroImage} alt="Preview" className="w-full object-cover" />
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+               <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800">
+                 <Wallet className="text-violet-600" size={24} /> Payment Configuration
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Bkash Personal Number</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10 font-mono" placeholder="017XXXXXXXX" value={settings.bkashNumber} onChange={e => setSettings({...settings, bkashNumber: e.target.value})} />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Nagad Personal Number</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10 font-mono" placeholder="01XXXXXXXXX" value={settings.nagadNumber} onChange={e => setSettings({...settings, nagadNumber: e.target.value})} />
+                  </div>
+               </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+               <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800">
+                 <Mail className="text-violet-600" size={24} /> Contact Information
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Public Email</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="info@example.com" value={settings.contactEmail} onChange={e => setSettings({...settings, contactEmail: e.target.value})} />
+                  </div>
+                  <div>
+                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Contact Phone</label>
+                     <input className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10" placeholder="+880..." value={settings.phoneNumber} onChange={e => setSettings({...settings, phoneNumber: e.target.value})} />
+                  </div>
+               </div>
+               <button onClick={() => alert('Settings synchronized successfully.')} className="w-full purple-gradient text-white py-5 rounded-2xl font-bold shadow-lg shadow-violet-600/30 hover:opacity-90 transition-all">
+                 Apply Global Settings
+               </button>
+            </div>
           </div>
         )}
 
-        {/* Direct Access Prevention for restricted tabs */}
-        {(activeTab === 'moderators' || activeTab === 'settings' || activeTab === 'orders') && userRole === 'moderator' && (
+        {/* Fallback Protection / Access Denied Screen */}
+        {(activeTab === 'categories' || activeTab === 'settings' || activeTab === 'moderators' || activeTab === 'orders') && userRole === 'moderator' && (
           <div className="p-16 text-center bg-white rounded-3xl border border-slate-100">
              <ShieldAlert size={64} className="mx-auto text-rose-500 mb-6 opacity-20" />
-             <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
-             <p className="text-slate-500 mb-8">You do not have administrative clearance to access this module.</p>
+             <h2 className="text-2xl font-bold text-slate-900 mb-2">Restricted Module</h2>
+             <p className="text-slate-500 mb-8">Your moderator account is limited to product and blog management. Please contact a Super Admin for further clearance.</p>
              <button onClick={() => setActiveTab('dashboard')} className="bg-violet-600 text-white px-8 py-3 rounded-xl font-bold">Return to Dashboard</button>
           </div>
         )}
       </main>
 
-      {/* Product Modal */}
+      {/* Shared Modals (Product and Blog) */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsProductModalOpen(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10 text-slate-900">
               <h3 className="text-xl font-bold">{editingProductId ? 'Edit Product' : 'Add New Product'}</h3>
               <button onClick={() => setIsProductModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2"><X size={24} /></button>
             </div>
-            <form onSubmit={handleSaveProduct} className="p-8 space-y-6 overflow-y-auto">
+            <form onSubmit={handleSaveProduct} className="p-8 space-y-6 overflow-y-auto text-slate-700">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input required className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="Product Title" value={productFormData.name} onChange={e => setProductFormData({...productFormData, name: e.target.value})} />
-                <select className="w-full p-3 bg-slate-50 border-none rounded-xl" value={productFormData.category} onChange={e => setProductFormData({...productFormData, category: e.target.value})}>
-                  {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                </select>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Product Title</label>
+                  <input required className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="Enter Product Title (e.g. Warm White Curtain Lights)" value={productFormData.name} onChange={e => setProductFormData({...productFormData, name: e.target.value})} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Category</label>
+                  <select required className="w-full p-3 bg-slate-50 border-none rounded-xl" value={productFormData.category} onChange={e => setProductFormData({...productFormData, category: e.target.value})}>
+                    <option value="" disabled>Select Category</option>
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
               </div>
-              <textarea required rows={4} className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="Description" value={productFormData.description} onChange={e => setProductFormData({...productFormData, description: e.target.value})} />
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Full Description</label>
+                <textarea required rows={4} className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="Describe the product features, dimensions, and materials..." value={productFormData.description} onChange={e => setProductFormData({...productFormData, description: e.target.value})} />
+              </div>
               <div className="grid grid-cols-3 gap-4">
-                <input type="number" className="p-3 bg-slate-50 border-none rounded-xl" placeholder="Price" value={productFormData.price} onChange={e => setProductFormData({...productFormData, price: Number(e.target.value)})} />
-                <input type="number" className="p-3 bg-slate-50 border-none rounded-xl" placeholder="Sale Price" value={productFormData.salePrice || ''} onChange={e => setProductFormData({...productFormData, salePrice: e.target.value ? Number(e.target.value) : undefined})} />
-                <input type="number" className="p-3 bg-slate-50 border-none rounded-xl" placeholder="Stock" value={productFormData.stock} onChange={e => setProductFormData({...productFormData, stock: Number(e.target.value)})} />
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Price (৳)</label>
+                  <input type="number" className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="0.00" value={productFormData.price} onChange={e => setProductFormData({...productFormData, price: Number(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Sale Price (৳)</label>
+                  <input type="number" className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="0.00 (Optional)" value={productFormData.salePrice || ''} onChange={e => setProductFormData({...productFormData, salePrice: e.target.value ? Number(e.target.value) : undefined})} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Initial Stock</label>
+                  <input type="number" className="w-full p-3 bg-slate-50 border-none rounded-xl" placeholder="10" value={productFormData.stock} onChange={e => setProductFormData({...productFormData, stock: Number(e.target.value)})} />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[0, 1, 2, 3].map(idx => (
-                  <input key={idx} type="url" className="p-3 bg-slate-50 border-none rounded-xl text-xs" placeholder={idx === 0 ? "Primary Image (Req)" : "Optional Image"} required={idx === 0} value={productFormData.images?.[idx] || ''} onChange={e => handleImageUrlChange(idx, e.target.value)} />
-                ))}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Product Gallery (URLs)</label>
+                <div className="grid grid-cols-2 gap-4">
+                  {[0, 1, 2, 3].map(idx => (
+                    <input key={idx} type="url" className="p-3 bg-slate-50 border-none rounded-xl text-xs" placeholder={idx === 0 ? "Primary Image Link (Required)" : "Additional Image Link (Optional)"} required={idx === 0} value={productFormData.images?.[idx] || ''} onChange={e => handleImageUrlChange(idx, e.target.value)} />
+                  ))}
+                </div>
               </div>
-              <button type="submit" className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold">Save Product</button>
+              <div className="flex gap-6 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded text-violet-600" checked={productFormData.isFeatured} onChange={e => setProductFormData({...productFormData, isFeatured: e.target.checked})} />
+                  <span className="text-sm font-bold text-slate-700">Best Seller / Featured</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded text-emerald-600" checked={productFormData.isNewArrival} onChange={e => setProductFormData({...productFormData, isNewArrival: e.target.checked})} />
+                  <span className="text-sm font-bold text-slate-700">New Arrival</span>
+                </label>
+              </div>
+              <button type="submit" className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all">
+                {editingProductId ? 'Update Item' : 'Create Item'}
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Blog Modal */}
       {isBlogModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsBlogModalOpen(false)}></div>
           <div className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10 text-slate-900">
               <h3 className="text-xl font-bold">{editingBlogId ? 'Edit Post' : 'Create Blog Post'}</h3>
               <button onClick={() => setIsBlogModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2"><X size={24} /></button>
             </div>
-            <form onSubmit={handleSaveBlog} className="p-8 space-y-6 overflow-y-auto">
+            <form onSubmit={handleSaveBlog} className="p-8 space-y-6 overflow-y-auto text-slate-700">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Article Title</label>
                 <input required type="text" className="w-full p-4 bg-slate-50 border-none rounded-2xl" placeholder="Title of your story..." value={blogFormData.title} onChange={e => setBlogFormData({...blogFormData, title: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Content</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Content / Description</label>
                 <textarea required rows={8} className="w-full p-4 bg-slate-50 border-none rounded-2xl resize-none" placeholder="Tell the world something amazing..." value={blogFormData.content} onChange={e => setBlogFormData({...blogFormData, content: e.target.value})} />
               </div>
               <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -548,9 +746,35 @@ export const Admin: React.FC = () => {
                 </div>
               </div>
               <div className="pt-8 flex gap-4">
-                <button type="button" onClick={() => setIsBlogModalOpen(false)} className="flex-1 py-4 rounded-2xl bg-slate-100 font-bold">Cancel</button>
+                <button type="button" onClick={() => setIsBlogModalOpen(false)} className="flex-1 py-4 rounded-2xl bg-slate-100 font-bold text-slate-600">Cancel</button>
                 <button type="submit" className="flex-1 py-4 rounded-2xl bg-violet-600 text-white font-bold">Publish Post</button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin-Only Category Modal */}
+      {isCategoryModalOpen && userRole === 'admin' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsCategoryModalOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10 text-slate-900">
+              <h3 className="text-xl font-bold">{editingCategoryId ? 'Edit Category' : 'New Category'}</h3>
+              <button onClick={() => setIsCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2"><X size={24} /></button>
+            </div>
+            <form onSubmit={handleSaveCategory} className="p-8 space-y-6">
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2 text-slate-400">Category Name</label>
+                <input required className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10 text-slate-700" placeholder="e.g. Smart Lighting" value={categoryFormData.name} onChange={e => setCategoryFormData({...categoryFormData, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2 text-slate-400">Thumbnail Image URL</label>
+                <input required type="url" className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-violet-500/10 text-xs text-slate-700" placeholder="Paste image link here..." value={categoryFormData.image} onChange={e => setCategoryFormData({...categoryFormData, image: e.target.value})} />
+              </div>
+              <button type="submit" className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all">
+                {editingCategoryId ? 'Save Changes' : 'Create Category'}
+              </button>
             </form>
           </div>
         </div>

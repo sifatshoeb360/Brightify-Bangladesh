@@ -1,4 +1,6 @@
 
+export type Language = 'en' | 'bn';
+
 export interface Product {
   id: string;
   name: string;
@@ -69,10 +71,13 @@ export interface Moderator {
 
 export interface AppSettings {
   siteName: string;
+  logoUrl: string;
   heroImage: string;
   primaryColor: string;
   contactEmail: string;
   phoneNumber: string;
+  bkashNumber: string;
+  nagadNumber: string;
   address: string;
   facebookUrl: string;
   showPromoBanner: boolean;

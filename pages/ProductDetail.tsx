@@ -1,9 +1,9 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ShoppingBag, Zap, ArrowLeft, Star, Truck, 
-  ShieldCheck, Heart, Share2, Plus, Minus, CheckCircle2 
+  ShieldCheck, Heart, Plus, Minus, Search
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { ProductCard } from './Home';
@@ -11,9 +11,15 @@ import { ProductCard } from './Home';
 export const ProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { products, addToCart } = useApp();
+  const { products, addToCart, toggleWishlist, isInWishlist, t } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'delivery'>('description');
+  
+  // Zoom state
+  const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
+  const [isZooming, setIsZooming] = useState(false);
+  const imageRef = useRef<HTMLDivElement>(null);
 
   const product = useMemo(() => 
     products.find(p => p.slug === slug), 
@@ -26,10 +32,10 @@ export const ProductDetail: React.FC = () => {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-        <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-        <p className="text-slate-500 mb-8">The item you are looking for might have been moved or removed.</p>
+        <h2 className="text-2xl font-bold mb-4">{t('productNotFound')}</h2>
+        <p className="text-slate-500 mb-8">{t('productNotFoundText')}</p>
         <Link to="/shop" className="bg-violet-600 text-white px-8 py-3 rounded-full font-bold">
-          Back to Shop
+          {t('backToShop')}
         </Link>
       </div>
     );
@@ -40,172 +46,187 @@ export const ProductDetail: React.FC = () => {
     navigate('/cart');
   };
 
-  // Function to render description with preserved formatting
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageRef.current) return;
+    const { left, top, width, height } = imageRef.current.getBoundingClientRect();
+    const x = ((e.pageX - left - window.scrollX) / width) * 100;
+    const y = ((e.pageY - top - window.scrollY) / height) * 100;
+    setZoomPos({ x, y });
+  };
+
   const renderDescription = (text: string) => {
     const hasHtml = /<[a-z][\s\S]*>/i.test(text);
-    
     if (hasHtml) {
-      return (
-        <div 
-          className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap prose prose-slate max-w-none prose-p:my-0 prose-ul:my-2 prose-li:my-0"
-          dangerouslySetInnerHTML={{ __html: text }}
-        />
-      );
+      return <div className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: text }} />;
     }
-    
-    return (
-      <div className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">
-        {text}
-      </div>
-    );
+    return <div className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{text}</div>;
   };
+
+  const dummyReviews = [
+    { id: 1, title: "Beautiful product", rating: 5, author: "Lily Feliciano", date: "31st May 2023", content: "I'm really happy with my order. It adds such a soft atmosphere to my bedroom." },
+    { id: 2, title: "Perfect Quality", rating: 5, author: "Abdullah Al Sayed", date: "12th Jan 2024", content: "The finishing is premium. Packed perfectly." }
+  ];
+
+  const isFavorited = isInWishlist(product.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
-      <button 
-        onClick={() => navigate(-1)} 
-        className="inline-flex items-center gap-2 text-slate-500 hover:text-violet-600 mb-8 font-medium transition-colors"
-      >
-        <ArrowLeft size={18} /> Back to browsing
+      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-500 hover:text-violet-600 mb-8 font-medium transition-colors">
+        <ArrowLeft size={18} /> {t('backToBrowsing')}
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-        {/* Left: Image Gallery */}
-        <div className="space-y-4">
-          <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-slate-100 border border-slate-100 shadow-sm relative">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-12 lg:gap-16 mb-20">
+        <div className="space-y-4 relative">
+          <div 
+            ref={imageRef}
+            onMouseEnter={() => setIsZooming(true)}
+            onMouseLeave={() => setIsZooming(false)}
+            onMouseMove={handleMouseMove}
+            className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm relative p-8 cursor-zoom-in"
+          >
             <img 
               src={product.images[activeImage]} 
               alt={product.name} 
-              className="w-full h-full object-cover transition-all duration-300"
+              className="w-full h-full object-contain transition-transform duration-300 ease-out pointer-events-none" 
+              style={{
+                transform: isZooming ? 'scale(2)' : 'scale(1)',
+                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+              }}
             />
             {product.isNewArrival && (
-              <span className="absolute top-6 left-6 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg">
-                NEW ARRIVAL
+              <span className="absolute top-6 left-6 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg z-10 pointer-events-none">
+                {t('newArrival')}
               </span>
             )}
+            {!isZooming && (
+              <div className="absolute bottom-6 right-6 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-400 opacity-60 pointer-events-none">
+                <Search size={16} />
+              </div>
+            )}
           </div>
-          
-          {/* Gallery Thumbnails: Only show if there's more than one valid image */}
           {product.images.length > 1 && (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center">
               {product.images.map((img, idx) => (
                 <button 
-                  key={idx}
-                  onClick={() => setActiveImage(idx)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-violet-600 scale-95' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  key={idx} 
+                  onClick={() => {
+                    setActiveImage(idx);
+                    setIsZooming(false);
+                  }} 
+                  className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-violet-600 scale-95 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
                 >
-                  <img src={img} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Right: Product Info */}
         <div className="flex flex-col">
           <div className="mb-6">
-            <p className="text-violet-600 font-bold text-sm uppercase tracking-widest mb-2">{product.category}</p>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">{product.name}</h1>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-violet-600 font-bold text-sm uppercase tracking-widest mb-2">{product.category}</p>
+                <h1 className="text-4xl font-bold text-slate-900 mb-4">{product.name}</h1>
+              </div>
+              <button 
+                onClick={() => toggleWishlist(product)}
+                className={`p-4 rounded-2xl transition-all border shadow-sm ${isFavorited ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-100 hover:text-rose-500'}`}
+                title={isFavorited ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart size={24} className={isFavorited ? 'fill-current' : ''} />
+              </button>
+            </div>
             <div className="flex items-center gap-4">
               <div className="flex text-amber-400">
-                {[...Array(5)].map((_, i) => <Star key={i} size={18} fill={i < 4 ? "currentColor" : "none"} stroke="currentColor" />)}
+                {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="currentColor" />)}
               </div>
-              <span className="text-sm text-slate-400">(24 customer reviews)</span>
+              <span className="text-sm text-slate-400">(2 {t('reviewsCount')})</span>
             </div>
           </div>
 
           <div className="mb-8 p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Current Price</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Price</p>
               <div className="flex items-center gap-3">
                 <span className="text-3xl font-bold text-violet-600">৳{product.salePrice || product.price}</span>
-                {product.salePrice && (
-                  <span className="text-lg text-slate-400 line-through font-medium">৳{product.price}</span>
-                )}
+                {product.salePrice && <span className="text-lg text-slate-400 line-through font-medium">৳{product.price}</span>}
               </div>
             </div>
-            {product.salePrice && (
-              <div className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-sm font-bold">
-                Save ৳{product.price - product.salePrice}
-              </div>
-            )}
-          </div>
-
-          <div className="mb-8">
-            {renderDescription(product.description)}
+            {product.salePrice && <div className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-sm font-bold">{t('saveMoney')}{product.price - product.salePrice}</div>}
           </div>
 
           <div className="space-y-6 pt-6 border-t border-slate-100 mb-10">
             <div className="flex items-center gap-6">
-              <span className="text-sm font-bold text-slate-700">Quantity:</span>
               <div className="flex items-center border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-3 hover:bg-slate-50 text-slate-500 transition-colors"
-                >
-                  <Minus size={20} />
-                </button>
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:bg-slate-50 text-slate-500 transition-colors"><Minus size={20} /></button>
                 <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-3 hover:bg-slate-50 text-slate-500 transition-colors"
-                >
-                  <Plus size={20} />
-                </button>
+                <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:bg-slate-50 text-slate-500 transition-colors"><Plus size={20} /></button>
               </div>
-              <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{product.stock} units available</span>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button 
-                onClick={() => addToCart(product, quantity)}
-                className="flex items-center justify-center gap-3 bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
-              >
-                <ShoppingBag size={20} /> Add to Cart
-              </button>
-              <button 
-                onClick={handleBuyNow}
-                className="flex items-center justify-center gap-3 bg-violet-600 text-white py-5 rounded-2xl font-bold hover:bg-violet-700 transition-all shadow-xl shadow-violet-600/30"
-              >
-                <Zap size={20} /> Buy It Now
-              </button>
+              <button onClick={() => addToCart(product, quantity)} className="flex items-center justify-center gap-3 bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"><ShoppingBag size={20} /> {t('addToCart')}</button>
+              <button onClick={handleBuyNow} className="flex items-center justify-center gap-3 bg-violet-600 text-white py-5 rounded-2xl font-bold hover:bg-violet-700 transition-all shadow-xl shadow-violet-600/30"><Zap size={20} /> {t('buyNow')}</button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10 border-t border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-violet-50 text-violet-600 rounded-full flex items-center justify-center">
-                <Truck size={18} />
-              </div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight">Fast<br/>Delivery</div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
-                <ShieldCheck size={18} />
-              </div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight">Secure<br/>Payment</div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center">
-                <Heart size={18} />
-              </div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-tight">Satisfaction<br/>Guaranteed</div>
-            </div>
+          <div className="grid grid-cols-3 gap-4 pt-10 border-t border-slate-100">
+             <div className="text-center">
+               <Truck size={20} className="mx-auto text-violet-600 mb-1" />
+               <p className="text-[10px] font-bold text-slate-500 uppercase">{t('fastDelivery')}</p>
+             </div>
+             <div className="text-center">
+               <ShieldCheck size={20} className="mx-auto text-emerald-600 mb-1" />
+               <p className="text-[10px] font-bold text-slate-500 uppercase">Secure</p>
+             </div>
+             <div className="text-center">
+               <Heart size={20} className="mx-auto text-rose-600 mb-1" />
+               <p className="text-[10px] font-bold text-slate-500 uppercase">Premium</p>
+             </div>
           </div>
         </div>
       </div>
 
-      {/* Related Products */}
+      <div className="mb-24">
+        <div className="flex flex-wrap border-b border-slate-200">
+          <button onClick={() => setActiveTab('description')} className={`px-6 py-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'description' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t('description')}</button>
+          <button onClick={() => setActiveTab('reviews')} className={`px-6 py-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'reviews' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t('customerReview')}</button>
+          <button onClick={() => setActiveTab('delivery')} className={`px-6 py-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'delivery' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>{t('deliveryInfo')}</button>
+        </div>
+
+        <div className="py-12 min-h-[300px]">
+          {activeTab === 'description' && renderDescription(product.description)}
+          {activeTab === 'reviews' && (
+            <div className="space-y-12 max-w-4xl">
+              {dummyReviews.map(review => (
+                <div key={review.id} className="border-b border-slate-100 pb-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-slate-900">{review.title}</h4>
+                    <div className="flex text-amber-400"><Star size={16} fill="currentColor" /></div>
+                  </div>
+                  <p className="text-sm text-slate-400 mb-2">{t('postedBy')} {review.author} {t('on')} {review.date}</p>
+                  <p className="text-slate-600 italic">"{review.content}"</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {activeTab === 'delivery' && (
+            <div className="max-w-4xl space-y-8">
+              <div className="grid grid-cols-2 gap-8">
+                <div><h4 className="font-bold mb-2">{t('insideDhaka')}</h4><p className="text-slate-600">Charge: ৳70</p></div>
+                <div><h4 className="font-bold mb-2">{t('outsideDhaka')}</h4><p className="text-slate-600">Charge: ৳120</p></div>
+              </div>
+              <div className="bg-violet-50 p-6 rounded-2xl border border-violet-100"><p className="text-sm text-violet-800"><strong>{t('note')}:</strong> {t('fragileNote')}</p></div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {relatedProducts.length > 0 && (
-        <div className="mt-32 pt-16 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">You May Also Like</h2>
-            <Link to="/shop" className="text-violet-600 font-bold hover:underline">View All</Link>
-          </div>
+        <div className="mt-16 pt-16 border-t border-slate-100">
+          <h2 className="text-2xl font-bold text-slate-900 mb-12">{t('youMayAlsoLike')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {relatedProducts.map(p => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            {relatedProducts.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>
       )}

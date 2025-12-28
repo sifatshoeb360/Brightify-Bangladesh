@@ -45,7 +45,7 @@ export interface BlogPost {
   content: string;
   author: string;
   date: string;
-  image: string;
+  images: string[];
   slug: string;
   tags: string[];
 }
@@ -69,6 +69,7 @@ export interface Moderator {
 
 export interface AppSettings {
   siteName: string;
+  heroImage: string;
   primaryColor: string;
   contactEmail: string;
   phoneNumber: string;

@@ -1,60 +1,66 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Star, Truck, ShieldCheck, Heart, ShoppingBag, Zap } from 'lucide-react';
+import { ArrowRight, Star, Truck, ShieldCheck, Heart, ShoppingBag, Zap, Sparkles } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
 export const Home: React.FC = () => {
-  const { products, categories, testimonials } = useApp();
+  const { products, categories, testimonials, settings } = useApp();
   const featured = products.filter(p => p.isFeatured).slice(0, 4);
+  const newArrivals = products.filter(p => p.isNewArrival).slice(0, 4);
 
   return (
     <div className="space-y-24 pb-24">
       {/* Hero Section */}
-      <section className="relative h-[80vh] overflow-hidden">
+      <section className="relative h-[85vh] overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1616489953149-758769947f57?auto=format&fit=crop&q=80&w=2000"
-            alt="Hero Decor"
+            src={settings.heroImage}
+            alt="Premium Home Interior"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-slate-900/40" />
+          <div className="absolute inset-0 bg-slate-900/50" />
         </div>
         <div className="relative h-full max-w-7xl mx-auto px-4 flex flex-col justify-center items-start text-white">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Illuminate Your <br /> <span className="text-violet-400">Living Space</span>
-          </h1>
-          <p className="text-lg md:text-xl max-w-lg mb-8 text-slate-100">
-            Discover a curated collection of premium lighting and decor that turns every house into a dream home.
-          </p>
-          <div className="flex gap-4">
-            <Link to="/shop" className="bg-violet-600 hover:bg-violet-700 px-8 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-xl">
-              Shop Now
-            </Link>
-            <Link to="/about" className="bg-white/10 hover:bg-white/20 backdrop-blur-md px-8 py-4 rounded-full font-bold transition-all">
-              Our Story
-            </Link>
+          <div className="animate-in fade-in slide-in-from-left-8 duration-700">
+            <span className="inline-block px-4 py-1.5 bg-violet-600/20 backdrop-blur-md border border-violet-400/30 rounded-full text-violet-200 text-xs font-bold tracking-widest uppercase mb-6">
+              New Collection 2025
+            </span>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Illuminate Your <br /> <span className="text-violet-400">Living Space</span>
+            </h1>
+            <p className="text-lg md:text-xl max-w-lg mb-8 text-slate-100/90 leading-relaxed">
+              Discover a curated collection of premium lighting and decor that turns every house into a dream home.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link to="/shop" className="bg-violet-600 hover:bg-violet-700 px-8 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-xl shadow-violet-600/30">
+                Shop Now
+              </Link>
+              <Link to="/about" className="bg-white/10 hover:bg-white/20 backdrop-blur-md px-8 py-4 rounded-full font-bold transition-all border border-white/20">
+                Our Story
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Trust Indicators */}
-      <section className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+      <section className="max-w-7xl mx-auto px-4 -mt-12 relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-100 transform hover:-translate-y-1 transition-transform">
           <div className="bg-violet-100 p-4 rounded-full text-violet-600"><Truck /></div>
           <div>
             <h4 className="font-bold">Fast Delivery</h4>
             <p className="text-sm text-slate-500">Across Bangladesh</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-100 transform hover:-translate-y-1 transition-transform">
           <div className="bg-emerald-100 p-4 rounded-full text-emerald-600"><ShieldCheck /></div>
           <div>
             <h4 className="font-bold">Quality Materials</h4>
             <p className="text-sm text-slate-500">Handpicked items</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-xl border border-slate-100 transform hover:-translate-y-1 transition-transform">
           <div className="bg-rose-100 p-4 rounded-full text-rose-600"><Heart /></div>
           <div>
             <h4 className="font-bold">Happy Customers</h4>
@@ -67,7 +73,7 @@ export const Home: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Shop by Category</h2>
+            <h2 className="text-3xl font-bold mb-2 text-slate-900 tracking-tight">Shop by Category</h2>
             <p className="text-slate-500">Find the perfect match for your style</p>
           </div>
           <Link to="/shop" className="text-violet-600 font-semibold flex items-center gap-2 hover:gap-3 transition-all">
@@ -76,7 +82,7 @@ export const Home: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map(cat => (
-            <Link key={cat.id} to={`/shop?category=${cat.slug}`} className="group relative aspect-square rounded-2xl overflow-hidden">
+            <Link key={cat.id} to={`/shop?category=${cat.slug}`} className="group relative aspect-square rounded-2xl overflow-hidden shadow-lg shadow-slate-200/50">
               <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent flex items-end p-6">
                 <h3 className="text-white font-bold text-xl">{cat.name}</h3>
@@ -86,11 +92,36 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* New Arrivals Section */}
+      {newArrivals.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center">
+                <Sparkles size={24} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">New Arrivals</h2>
+                <p className="text-slate-500">Freshly added pieces for your collection</p>
+              </div>
+            </div>
+            <Link to="/shop?filter=newest" className="hidden sm:flex items-center gap-2 text-emerald-600 font-bold hover:translate-x-1 transition-transform">
+              Explore All <ArrowRight size={18} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {newArrivals.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Featured Products */}
       <section className="bg-slate-100 py-24">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Best Sellers</h2>
+            <h2 className="text-4xl font-bold mb-4 text-slate-900 tracking-tight">Best Sellers</h2>
             <p className="text-slate-500 max-w-2xl mx-auto">Our most-loved pieces, chosen by our wonderful community.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -112,7 +143,7 @@ export const Home: React.FC = () => {
           />
         </div>
         <div className="space-y-8">
-          <h2 className="text-4xl font-bold">Why Brightify BD?</h2>
+          <h2 className="text-4xl font-bold text-slate-900 tracking-tight">Why Brightify BD?</h2>
           <p className="text-lg text-slate-600 leading-relaxed">
             We believe that your home should be a reflection of your personality. That's why we source only the finest materials and designs that blend contemporary trends with timeless elegance.
           </p>
@@ -137,16 +168,16 @@ export const Home: React.FC = () => {
 
       {/* Testimonials */}
       <section className="max-w-7xl mx-auto px-4">
-        <h2 className="text-center text-3xl font-bold mb-16">What Our Clients Say</h2>
+        <h2 className="text-center text-3xl font-bold mb-16 text-slate-900 tracking-tight">What Our Clients Say</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {testimonials.map(t => (
-            <div key={t.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-4">
+            <div key={t.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-4 hover:shadow-lg transition-shadow">
               <div className="flex gap-1 text-amber-400">
                 {[...Array(5)].map((_, i) => <Star key={i} size={16} fill="currentColor" />)}
               </div>
-              <p className="text-lg italic text-slate-700">"{t.content}"</p>
+              <p className="text-lg italic text-slate-700 leading-relaxed">"{t.content}"</p>
               <div className="flex items-center gap-4 mt-4">
-                <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover" />
+                <img src={t.avatar} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-slate-100" />
                 <div>
                   <p className="font-bold text-slate-900">{t.name}</p>
                   <p className="text-xs text-slate-500 uppercase tracking-widest">{t.role}</p>
@@ -159,10 +190,10 @@ export const Home: React.FC = () => {
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4">
-        <div className="purple-gradient rounded-[3rem] p-12 md:p-20 text-center text-white overflow-hidden relative">
+        <div className="purple-gradient rounded-[3rem] p-12 md:p-20 text-center text-white overflow-hidden relative shadow-2xl shadow-violet-500/30">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -ml-48 -mb-48" />
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 relative">Ready to transform your home?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 relative tracking-tight">Ready to transform your home?</h2>
           <p className="text-violet-100 text-lg mb-10 max-w-xl mx-auto relative">
             Join thousands of happy homeowners and start your decoration journey with us today.
           </p>
@@ -190,21 +221,28 @@ export const ProductCard: React.FC<{ product: any }> = ({ product }) => {
   };
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100">
+    <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 relative">
       <Link to={`/product/${product.slug}`} className="block relative aspect-[4/5] overflow-hidden">
         <img
           src={product.images[0]}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        {product.salePrice && (
-          <span className="absolute top-4 left-4 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-            SALE
-          </span>
-        )}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {product.isNewArrival && (
+            <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+              NEW ARRIVAL
+            </span>
+          )}
+          {product.salePrice && (
+            <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+              OFFER
+            </span>
+          )}
+        </div>
       </Link>
       <div className="p-5 space-y-3">
-        <p className="text-xs text-slate-500 uppercase tracking-wider">{product.category}</p>
+        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{product.category}</p>
         <Link to={`/product/${product.slug}`} className="block font-bold text-slate-800 hover:text-violet-600 transition-colors line-clamp-1">
           {product.name}
         </Link>
@@ -221,16 +259,16 @@ export const ProductCard: React.FC<{ product: any }> = ({ product }) => {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => addToCart(product)}
-            className="flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-3 px-2 rounded-xl transition-all text-sm"
+            className="flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-3 px-2 rounded-xl transition-all text-xs"
           >
-            <ShoppingBag size={16} />
+            <ShoppingBag size={14} />
             Cart
           </button>
           <button
             onClick={handleBuyNow}
-            className="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-2 rounded-xl transition-all shadow-md text-sm"
+            className="flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-2 rounded-xl transition-all shadow-md text-xs"
           >
-            <Zap size={16} />
+            <Zap size={14} />
             Buy Now
           </button>
         </div>

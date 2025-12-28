@@ -41,33 +41,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNewArrival: false,
     tags: ['stars', 'curtain', 'warm-white'],
     slug: 'celestial-star-moon-curtain'
-  },
-  {
-    id: '3',
-    name: 'Galaxy Nebula Projector',
-    price: 2500,
-    description: 'Remote-controlled projector with 14 color themes. Includes music sync mode for the ultimate space adventure at home.',
-    category: 'Lighting',
-    images: ['https://i.ibb.co/KNP1m1G/product-10.jpg', 'https://i.ibb.co/Srb2L98/product-11.jpg'],
-    stock: 15,
-    isFeatured: true,
-    isNewArrival: true,
-    tags: ['projector', 'galaxy', 'tech'],
-    slug: 'galaxy-nebula-projector'
-  },
-  {
-    id: '4',
-    name: 'Pastel Rose Garland',
-    price: 1100,
-    salePrice: 850,
-    description: 'Soft multi-color rose garlands perfect for soft aesthetic room decor.',
-    category: 'Wall Decor',
-    images: ['https://i.ibb.co/h7Vv3yR/product-12.jpg', 'https://i.ibb.co/M9B2yYn/product-13.jpg'],
-    stock: 45,
-    isFeatured: false,
-    isNewArrival: false,
-    tags: ['pastel', 'floral', 'garland'],
-    slug: 'pastel-rose-garland'
   }
 ];
 
@@ -83,10 +56,10 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
     id: 'b1',
     title: '5 Ways to Brighten Your Living Room',
     excerpt: 'Light is the soul of a home. Discover how small changes can make a big impact.',
-    content: 'Full content here...',
+    content: 'Light is the soul of a home. Discover how small changes can make a big impact. From changing bulbs to adding accent lighting, we explore it all.',
     author: 'Admin',
     date: '2024-03-20',
-    image: 'https://picsum.photos/seed/blog1/800/400',
+    images: ['https://picsum.photos/seed/blog1/800/400'],
     slug: '5-ways-to-brighten-living-room',
     tags: ['Interior Design', 'Lighting']
   }
@@ -99,6 +72,7 @@ export const INITIAL_TESTIMONIALS: Testimonial[] = [
 
 export const INITIAL_SETTINGS: AppSettings = {
   siteName: 'Brightify BD',
+  heroImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop',
   primaryColor: '#7c3aed',
   contactEmail: 'info@brightifybd.com',
   phoneNumber: '+880 1711 111111',

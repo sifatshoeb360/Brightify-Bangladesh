@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ShoppingBag, Zap, ArrowLeft, Star, Truck, 
-  ShieldCheck, Heart, Plus, Minus, Search
+  ShieldCheck, Heart, Plus, Minus, Search, Send
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { ProductCard } from './Home';
@@ -11,11 +11,16 @@ import { ProductCard } from './Home';
 export const ProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { products, addToCart, toggleWishlist, isInWishlist, t } = useApp();
+  const { products, addToCart, toggleWishlist, isInWishlist, addReview, currentUser, t } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'delivery'>('description');
   
+  // Review form state
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
+
   // Zoom state
   const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
   const [isZooming, setIsZooming] = useState(false);
@@ -54,6 +59,15 @@ export const ProductDetail: React.FC = () => {
     setZoomPos({ x, y });
   };
 
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    addReview(product.id, reviewRating, reviewComment);
+    setReviewComment('');
+    setIsReviewSubmitted(true);
+    setTimeout(() => setIsReviewSubmitted(false), 3000);
+  };
+
   const renderDescription = (text: string) => {
     const hasHtml = /<[a-z][\s\S]*>/i.test(text);
     if (hasHtml) {
@@ -62,12 +76,11 @@ export const ProductDetail: React.FC = () => {
     return <div className="text-slate-600 leading-relaxed text-lg whitespace-pre-wrap">{text}</div>;
   };
 
-  const dummyReviews = [
-    { id: 1, title: "Beautiful product", rating: 5, author: "Lily Feliciano", date: "31st May 2023", content: "I'm really happy with my order. It adds such a soft atmosphere to my bedroom." },
-    { id: 2, title: "Perfect Quality", rating: 5, author: "Abdullah Al Sayed", date: "12th Jan 2024", content: "The finishing is premium. Packed perfectly." }
-  ];
-
   const isFavorited = isInWishlist(product.id);
+  const reviews = product.reviews || [];
+  const avgRating = reviews.length > 0 
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : "0";
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
@@ -139,9 +152,11 @@ export const ProductDetail: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex text-amber-400">
-                {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="currentColor" />)}
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={18} fill={i < Math.round(Number(avgRating)) ? "currentColor" : "none"} className={i < Math.round(Number(avgRating)) ? "" : "text-slate-200"} />
+                ))}
               </div>
-              <span className="text-sm text-slate-400">(2 {t('reviewsCount')})</span>
+              <span className="text-sm text-slate-400">({reviews.length} {t('reviewsCount')})</span>
             </div>
           </div>
 
@@ -197,17 +212,84 @@ export const ProductDetail: React.FC = () => {
         <div className="py-12 min-h-[300px]">
           {activeTab === 'description' && renderDescription(product.description)}
           {activeTab === 'reviews' && (
-            <div className="space-y-12 max-w-4xl">
-              {dummyReviews.map(review => (
-                <div key={review.id} className="border-b border-slate-100 pb-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-bold text-slate-900">{review.title}</h4>
-                    <div className="flex text-amber-400"><Star size={16} fill="currentColor" /></div>
-                  </div>
-                  <p className="text-sm text-slate-400 mb-2">{t('postedBy')} {review.author} {t('on')} {review.date}</p>
-                  <p className="text-slate-600 italic">"{review.content}"</p>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12">
+              <div className="space-y-8">
+                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                  <h4 className="font-bold text-lg mb-4">{t('writeReview')}</h4>
+                  {currentUser ? (
+                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">{t('rating')}</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              className={`p-1 transition-colors ${reviewRating >= star ? 'text-amber-400' : 'text-slate-200'}`}
+                            >
+                              <Star size={24} fill={reviewRating >= star ? "currentColor" : "none"} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">{t('comment')}</label>
+                        <textarea
+                          required
+                          rows={4}
+                          className="w-full p-4 bg-white border border-slate-100 rounded-2xl resize-none text-sm"
+                          placeholder="What did you like or dislike about this product?"
+                          value={reviewComment}
+                          onChange={e => setReviewComment(e.target.value)}
+                        />
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="w-full bg-violet-600 text-white py-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-violet-700 transition-all"
+                      >
+                        <Send size={18} /> {t('submitReview')}
+                      </button>
+                      {isReviewSubmitted && (
+                         <p className="text-xs text-emerald-600 font-bold text-center animate-in fade-in">{t('reviewSuccess')}</p>
+                      )}
+                    </form>
+                  ) : (
+                    <div className="text-center py-6">
+                       <p className="text-slate-500 text-sm mb-4">{t('loginToReview')}</p>
+                       <Link to="/login" className="text-violet-600 font-bold underline">{t('login')}</Link>
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-8">
+                {reviews.length > 0 ? reviews.map(review => (
+                  <div key={review.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-sm">
+                            {review.userName.charAt(0)}
+                         </div>
+                         <div>
+                            <h4 className="font-bold text-slate-900 text-sm">{review.userName}</h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{review.date}</p>
+                         </div>
+                      </div>
+                      <div className="flex text-amber-400">
+                        {[...Array(5)].map((_, i) => (
+                           <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "" : "text-slate-100"} />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-slate-600 text-sm leading-relaxed">"{review.comment}"</p>
+                  </div>
+                )) : (
+                  <div className="text-center py-16 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                     <p className="text-slate-400 font-medium">No reviews yet. Be the first to share your thoughts!</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {activeTab === 'delivery' && (

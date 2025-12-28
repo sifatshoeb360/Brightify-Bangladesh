@@ -1,6 +1,22 @@
 
 export type Language = 'en' | 'bn';
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+}
+
+export interface Review {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -17,6 +33,7 @@ export interface Product {
   slug: string;
   metaTitle?: string;
   metaDescription?: string;
+  reviews?: Review[];
 }
 
 export interface Category {

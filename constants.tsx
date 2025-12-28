@@ -29,7 +29,7 @@ export const TRANSLATIONS = {
     confirmOrder: "Confirm Order",
     insideDhaka: "Inside Dhaka",
     outsideDhaka: "Outside Dhaka",
-    customerReview: "Customer Review",
+    customerReview: "Customer Reviews",
     description: "Description",
     deliveryInfo: "Delivery Information",
     save: "Save",
@@ -50,6 +50,7 @@ export const TRANSLATIONS = {
     satisfaction: "Satisfaction guaranteed",
     whyChoose: "Why Brightify BD?",
     learnMore: "Learn More",
+    readMore: "Read More",
     readyToTransform: "Ready to transform your home?",
     browseCollection: "Browse Collection",
     getInTouch: "Get in Touch",
@@ -104,13 +105,29 @@ export const TRANSLATIONS = {
     noStories: "No inspiration stories published yet.",
     noStoriesSub: "Our designers are busy writing for you!",
     consultDesigners: "Consult our designers",
-    // New Placeholders
     namePlaceholder: "e.g. Abdullah Al Mamun",
     phonePlaceholder: "01XXXXXXXXX",
     districtPlaceholder: "Select your district",
     addressPlaceholder: "House, road, area...",
     trxPlaceholder: "Transaction ID",
-    paymentNumberPlaceholder: "Your Payment Number"
+    paymentNumberPlaceholder: "Your Payment Number",
+    // Auth & Reviews
+    login: "Login",
+    signup: "Sign Up",
+    logout: "Logout",
+    noAccount: "Don't have an account?",
+    alreadyAccount: "Already have an account?",
+    createAccount: "Create Account",
+    email: "Email Address",
+    password: "Password",
+    writeReview: "Write a Review",
+    submitReview: "Submit Review",
+    loginToReview: "Please login to write a review",
+    reviewSuccess: "Review submitted successfully!",
+    rating: "Rating",
+    comment: "Comment",
+    adminPortal: "Admin Portal",
+    whatClientsSay: "What Our Clients Say"
   },
   bn: {
     home: "হোম",
@@ -160,6 +177,7 @@ export const TRANSLATIONS = {
     satisfaction: "শতভাগ নিশ্চয়তা",
     whyChoose: "কেন ব্রাইটিফাই বিডি?",
     learnMore: "আরও জানুন",
+    readMore: "আরও পড়ুন",
     readyToTransform: "আপনার ঘর সাজাতে প্রস্তুত তো?",
     browseCollection: "কালেকশন দেখুন",
     getInTouch: "যোগাযোগ করুন",
@@ -214,13 +232,29 @@ export const TRANSLATIONS = {
     noStories: "এখনও কোনো গল্প প্রকাশিত হয়নি।",
     noStoriesSub: "আমাদের ডিজাইনাররা আপনার জন্য লিখতে ব্যস্ত!",
     consultDesigners: "আমাদের ডিজাইনারদের পরামর্শ নিন",
-    // New Placeholders (Bangla)
     namePlaceholder: "যেমন: আবদুল্লাহ আল মামুন",
     phonePlaceholder: "০১XXXXXXXXX",
     districtPlaceholder: "আপনার জেলা নির্বাচন করুন",
     addressPlaceholder: "বাসা নং, রোড, এলাকা...",
     trxPlaceholder: "ট্রানজেকশন আইডি",
-    paymentNumberPlaceholder: "আপনার পেমেন্ট নম্বর"
+    paymentNumberPlaceholder: "আপনার পেমেন্ট নম্বর",
+    // Auth & Reviews (Bangla)
+    login: "লগইন",
+    signup: "সাইন আপ",
+    logout: "লগআউট",
+    noAccount: "অ্যাকাউন্ট নেই?",
+    alreadyAccount: "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+    createAccount: "অ্যাকাউন্ট তৈরি করুন",
+    email: "ইমেইল ঠিকানা",
+    password: "পাসওয়ার্ড",
+    writeReview: "মতামত লিখুন",
+    submitReview: "মতামত জমা দিন",
+    loginToReview: "মতামত দিতে লগইন করুন",
+    reviewSuccess: "মতামত সফলভাবে জমা হয়েছে!",
+    rating: "রেটিং",
+    comment: "মন্তব্য",
+    adminPortal: "অ্যাডমিন পোর্টাল",
+    whatClientsSay: "আমাদের সম্পর্কে ক্রেতাদের মতামত"
   }
 };
 
@@ -292,6 +326,7 @@ export const BANGLADESH_DISTRICTS = [
 ].sort((a, b) => a.en.localeCompare(b.en));
 
 export const INITIAL_PRODUCTS: Product[] = [
+  // LIGHTING
   {
     id: '1',
     name: 'Eternal Rose LED String Lights',
@@ -304,21 +339,118 @@ export const INITIAL_PRODUCTS: Product[] = [
     isFeatured: true,
     isNewArrival: true,
     tags: ['roses', 'led', 'romantic'],
-    slug: 'eternal-rose-led-lights'
+    slug: 'eternal-rose-led-lights',
+    reviews: [
+      { id: 'rev1', userId: 'u1', userName: 'Lily Feliciano', rating: 5, comment: "I'm really happy with my order. It adds such a soft atmosphere to my bedroom.", date: '31/05/2023' }
+    ]
   },
   {
     id: '2',
     name: 'Celestial Star & Moon Curtain',
     price: 1800,
     salePrice: 1550,
-    description: 'Transform your windows into a galaxy with these warm white star and moon curtain lights.',
+    description: 'Transform your windows into a galaxy with these warm white star and moon curtain lights. Features 138 LEDs and 8 flashing modes.',
     category: 'Lighting',
     images: ['https://i.ibb.co/zXn2H1B/product-3.jpg', 'https://i.ibb.co/N7x1n9v/product-4.jpg'],
     stock: 30,
     isFeatured: true,
     isNewArrival: false,
     tags: ['stars', 'curtain', 'warm-white'],
-    slug: 'celestial-star-moon-curtain'
+    slug: 'celestial-star-moon-curtain',
+    reviews: []
+  },
+  {
+    id: '3',
+    name: 'Modern Glass Dome Table Lamp',
+    price: 2500,
+    salePrice: 2100,
+    description: 'A minimalist masterpiece featuring a clear hand-blown glass dome over an elegant metallic base. Perfect for bedside or office staging.',
+    category: 'Lighting',
+    images: ['https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=800&auto=format&fit=crop'],
+    stock: 15,
+    isFeatured: false,
+    isNewArrival: true,
+    tags: ['modern', 'lamp', 'minimalist'],
+    slug: 'modern-glass-dome-lamp',
+    reviews: []
+  },
+  // WALL DECOR
+  {
+    id: '4',
+    name: 'Abstract Gold Foil Canvas Art',
+    price: 3800,
+    salePrice: 3200,
+    description: 'Premium hand-painted abstract canvas featuring real gold foil accents. This 24x36 piece adds instant luxury to your living room walls.',
+    category: 'Wall Decor',
+    images: ['https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop'],
+    stock: 10,
+    isFeatured: true,
+    isNewArrival: true,
+    tags: ['art', 'gold', 'canvas'],
+    slug: 'abstract-gold-foil-art',
+    reviews: []
+  },
+  {
+    id: '5',
+    name: 'Hexagon Mirror Wall Set',
+    price: 1500,
+    salePrice: 1250,
+    description: 'A set of 12 adhesive acrylic hexagon mirrors that can be arranged in any pattern. Reflect light and create the illusion of a larger space.',
+    category: 'Wall Decor',
+    images: ['https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=800&auto=format&fit=crop'],
+    stock: 40,
+    isFeatured: false,
+    isNewArrival: false,
+    tags: ['mirror', 'decor', 'geometric'],
+    slug: 'hexagon-mirror-set',
+    reviews: []
+  },
+  // FURNITURE ACCENTS
+  {
+    id: '6',
+    name: 'Emerald Velvet Ottoman',
+    price: 5500,
+    salePrice: 4800,
+    description: 'Luxurious emerald green velvet footstool with gold-finished stainless steel legs. A statement piece that doubles as extra seating.',
+    category: 'Furniture Accents',
+    images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=800&auto=format&fit=crop'],
+    stock: 5,
+    isFeatured: true,
+    isNewArrival: true,
+    tags: ['furniture', 'velvet', 'luxury'],
+    slug: 'emerald-velvet-ottoman',
+    reviews: []
+  },
+  // ACCESSORIES
+  {
+    id: '7',
+    name: 'Nordic Ceramic Vase Set',
+    price: 2200,
+    salePrice: 1850,
+    description: 'Set of 3 matte finish ceramic vases in varying heights. Perfect for dried flowers or as standalone sculptural pieces.',
+    category: 'Accessories',
+    images: ['https://images.unsplash.com/photo-1581783898377-1c85bf937427?q=80&w=800&auto=format&fit=crop'],
+    stock: 25,
+    isFeatured: false,
+    isNewArrival: true,
+    tags: ['ceramic', 'nordic', 'vases'],
+    slug: 'nordic-ceramic-vase-set',
+    reviews: []
+  },
+  {
+    id: '8',
+    name: 'Aromatic Scented Candle Set',
+    price: 950,
+    salePrice: 750,
+    description: 'Hand-poured soy wax candles in three signature scents: Lavender Dream, Sandalwood Mist, and Ocean Breeze. Comes in recycled glass jars.',
+    category: 'Accessories',
+    images: ['https://images.unsplash.com/photo-1603006905003-be475563bc59?q=80&w=800&auto=format&fit=crop'],
+    stock: 60,
+    isFeatured: false,
+    isNewArrival: false,
+    tags: ['candles', 'scent', 'home-office'],
+    slug: 'aromatic-scented-candle-set',
+    reviews: []
   }
 ];
 
@@ -333,19 +465,65 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
   {
     id: 'b1',
     title: '5 Ways to Brighten Your Living Room',
-    excerpt: 'Light is the soul of a home. Discover how small changes can make a big impact.',
-    content: 'Light is the soul of a home. Discover how small changes can make a big impact. From changing bulbs to adding accent lighting, we explore it all.',
+    excerpt: 'Light is the soul of a home. Discover how small changes can make a big impact on your mood.',
+    content: 'Light is the soul of a home. Discover how small changes can make a big impact. From changing bulbs to adding accent lighting, we explore it all. Start by identifying the dark corners in your room and placing a floor lamp or wall sconce to draw the eye. Layering light—using overhead, task, and ambient lighting together—creates depth and warmth.',
     author: 'Admin',
-    date: '2024-03-20',
+    date: '20/03/2024',
     images: ['https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&q=80&w=800'],
     slug: '5-ways-to-brighten-living-room',
     tags: ['Interior Design', 'Lighting']
+  },
+  {
+    id: 'b2',
+    title: 'Small Space Magic: Decorating Apartments',
+    excerpt: 'Living in a studio? Don\'t sacrifice style. Here is how to maximize every square inch.',
+    content: 'Living in a small apartment doesn\'t mean you can\'t have a beautiful home. Use mirrors to reflect light and create the illusion of depth. Choose multi-functional furniture like ottomans that store blankets or tables that fold away. Keep the color palette light and airy to prevent the space from feeling cramped.',
+    author: 'Sarah Jenkins',
+    date: '15/04/2024',
+    images: ['https://images.unsplash.com/photo-1536376074432-bf1217e71f4a?auto=format&fit=crop&q=80&w=800'],
+    slug: 'small-space-magic-apartments',
+    tags: ['Apartment Living', 'Space Saving']
+  },
+  {
+    id: 'b3',
+    title: 'The Power of Texture in Interior Design',
+    excerpt: 'Why the way things "feel" is just as important as how they look in your home.',
+    content: 'Texture is the secret ingredient that professional designers use to make a room feel complete. Mix rough textures like burlap or natural wood with smooth surfaces like velvet or silk. In a monochrome room, texture is what provides visual interest and prevents the space from looking flat and uninviting.',
+    author: 'Admin',
+    date: '02/05/2024',
+    images: ['https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=800'],
+    slug: 'power-of-texture-interior-design',
+    tags: ['Design Principles', 'Styling']
+  },
+  {
+    id: 'b4',
+    title: 'Cozy Corners: Styling an Unused Nook',
+    excerpt: 'Transform that awkward corner under the stairs into your favorite reading spot.',
+    content: 'Every home has those awkward "dead" spaces. A comfortable chair, a small side table, and a dedicated task light can turn a corner into a sanctuary. Add a plush rug and a couple of your favorite books to make it inviting. It is about creating "zones" within your home for different activities.',
+    author: 'Ahmed Rezwan',
+    date: '12/06/2024',
+    images: ['https://images.unsplash.com/photo-1617103996702-96ff29b1c467?auto=format&fit=crop&q=80&w=800'],
+    slug: 'cozy-corners-styling-nooks',
+    tags: ['DIY', 'Home Sanctuary']
+  },
+  {
+    id: 'b5',
+    title: 'Trends of 2025: What is Next in Home Decor',
+    excerpt: 'From sustainable materials to high-tech lighting, see what will be trending next year.',
+    content: 'As we move into 2025, the focus is shifting towards sustainable, recycled materials and biophilic design. Bringing the outside in with plants and natural stones is bigger than ever. We are also seeing a rise in smart lighting that adjusts its color temperature based on the time of day to match our circadian rhythms.',
+    author: 'Admin',
+    date: '01/07/2024',
+    images: ['https://images.unsplash.com/photo-1615873968403-89e068628265?auto=format&fit=crop&q=80&w=800'],
+    slug: 'trends-2025-home-decor',
+    tags: ['Trends', 'Future Living']
   }
 ];
 
 export const INITIAL_TESTIMONIALS: Testimonial[] = [
   { id: 't1', name: 'Sara Khan', role: 'Homemaker', content: 'The lights from Brightify BD changed the entire vibe of my bedroom. Absolutely love the quality!', rating: 5, avatar: 'https://i.pravatar.cc/150?u=sara' },
-  { id: 't2', name: 'Ahmed Rezwan', role: 'Architect', content: 'Premium finishing and very fast delivery. Highly recommended for home staging.', rating: 5, avatar: 'https://i.pravatar.cc/150?u=ahmed' }
+  { id: 't2', name: 'Ahmed Rezwan', role: 'Architect', content: 'Premium finishing and very fast delivery. Highly recommended for home staging.', rating: 5, avatar: 'https://i.pravatar.cc/150?u=ahmed' },
+  { id: 't3', name: 'Nusrat Jahan', role: 'Interior Designer', content: 'As a professional, I highly value the aesthetic and quality of Brightify items. They truly elevate space.', rating: 5, avatar: 'https://i.pravatar.cc/150?u=nusrat' },
+  { id: 't4', name: 'Zayed Ali', role: 'Home Owner', content: 'Customer service was very responsive. The packing was so secure for the glass domes I ordered.', rating: 5, avatar: 'https://i.pravatar.cc/150?u=zayed' }
 ];
 
 export const INITIAL_SETTINGS: AppSettings = {

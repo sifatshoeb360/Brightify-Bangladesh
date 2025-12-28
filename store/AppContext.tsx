@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, Category, BlogPost, Testimonial, AppSettings, CartItem, Order, FormSubmission, Language } from '../types';
+import { Product, Category, BlogPost, Testimonial, AppSettings, CartItem, Order, FormSubmission, Language, User, Review } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_BLOG_POSTS, INITIAL_TESTIMONIALS, INITIAL_SETTINGS, TRANSLATIONS } from '../constants';
 
 interface AppContextType {
@@ -28,6 +28,13 @@ interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: keyof typeof TRANSLATIONS.en) => string;
+  // Auth & Reviews
+  currentUser: User | null;
+  users: User[];
+  login: (email: string, pass: string) => boolean;
+  register: (name: string, email: string, pass: string) => void;
+  logout: () => void;
+  addReview: (productId: string, rating: number, comment: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -41,6 +48,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('products');
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+  });
+
+  const [users, setUsers] = useState<User[]>(() => {
+    const saved = localStorage.getItem('site_users');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('current_site_user');
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [categories, setCategories] = useState<Category[]>(() => {
@@ -87,6 +104,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => localStorage.setItem('orders', JSON.stringify(orders)), [orders]);
   useEffect(() => localStorage.setItem('submissions', JSON.stringify(submissions)), [submissions]);
   useEffect(() => localStorage.setItem('language', language), [language]);
+  useEffect(() => localStorage.setItem('site_users', JSON.stringify(users)), [users]);
+  useEffect(() => localStorage.setItem('current_site_user', JSON.stringify(currentUser)), [currentUser]);
 
   const addToCart = (product: Product, quantity = 1) => {
     setCart(prev => {
@@ -133,6 +152,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSubmissions(prev => [newSub, ...prev]);
   };
 
+  // Auth Functions
+  const loginUser = (email: string, pass: string): boolean => {
+    const user = users.find(u => u.email === email && u.password === pass);
+    if (user) {
+      setCurrentUser(user);
+      return true;
+    }
+    return false;
+  };
+
+  const registerUser = (name: string, email: string, pass: string) => {
+    const newUser: User = { id: Date.now().toString(), name, email, password: pass };
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+  };
+
+  const logoutUser = () => {
+    setCurrentUser(null);
+  };
+
+  const addReview = (productId: string, rating: number, comment: string) => {
+    if (!currentUser) return;
+    const newReview: Review = {
+      id: Date.now().toString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      rating,
+      comment,
+      date: new Date().toLocaleDateString()
+    };
+    setProducts(prev => prev.map(p => {
+      if (p.id === productId) {
+        return { ...p, reviews: [...(p.reviews || []), newReview] };
+      }
+      return p;
+    }));
+  };
+
   const t = (key: keyof typeof TRANSLATIONS.en): string => {
     return TRANSLATIONS[language][key] || key;
   };
@@ -142,7 +199,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       products, setProducts, categories, setCategories, blogPosts, setBlogPosts, testimonials: INITIAL_TESTIMONIALS,
       settings, setSettings, cart, addToCart, removeFromCart, updateCartQuantity, clearCart, 
       wishlist, toggleWishlist, isInWishlist, orders, addOrder,
-      submissions, addSubmission, language, setLanguage, t
+      submissions, addSubmission, language, setLanguage, t,
+      currentUser, users, login: loginUser, register: registerUser, logout: logoutUser, addReview
     }}>
       {children}
     </AppContext.Provider>

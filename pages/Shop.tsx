@@ -1,15 +1,36 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { ProductCard } from './Home';
+
+const ProductSkeleton = () => (
+  <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col h-full">
+    <div className="aspect-square bg-slate-100 animate-pulse" />
+    <div className="p-4 space-y-4">
+      <div className="h-3 bg-slate-100 rounded w-1/4 animate-pulse" />
+      <div className="h-5 bg-slate-200 rounded w-3/4 animate-pulse" />
+      <div className="h-6 bg-slate-100 rounded w-1/2 animate-pulse" />
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <div className="h-10 bg-slate-50 rounded-lg animate-pulse" />
+        <div className="h-10 bg-slate-50 rounded-lg animate-pulse" />
+      </div>
+    </div>
+  </div>
+);
 
 export const Shop: React.FC = () => {
   const { products, categories, t } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [searchParams, search, sortBy]);
 
   const activeCategory = searchParams.get('category');
 
@@ -91,7 +112,11 @@ export const Shop: React.FC = () => {
 
         {/* Product Grid */}
         <div className="flex-1">
-          {filteredProducts.length > 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.from({ length: 6 }).map((_, i) => <ProductSkeleton key={i} />)}
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map(product => (
                 <ProductCard key={product.id} product={product} />

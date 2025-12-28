@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, useLocation, Link, useParams } from 'react-router-dom';
 import { AppProvider, useApp } from './store/AppContext';
 import { Navbar, Footer } from './components/Layout';
@@ -14,6 +14,34 @@ import { ProductDetail } from './pages/ProductDetail';
 import { ScrollToTop } from './components/ScrollToTop';
 import { BookOpen, Calendar, User, ArrowLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Defined at the top to ensure it's initialized before usage in subsequent components
+// Fixed error where 'children' was required but seen as missing in some JSX contexts by making it optional
+const AnimatedPage = ({ children }: { children?: React.ReactNode }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
+const BlogSkeleton = () => (
+  <div className="bg-white rounded-[2rem] border border-slate-100 flex flex-col h-full overflow-hidden">
+    <div className="aspect-[16/10] bg-slate-100 animate-pulse" />
+    <div className="p-6 flex-1 flex flex-col gap-4">
+      <div className="h-6 bg-slate-200 rounded-lg w-3/4 animate-pulse" />
+      <div className="space-y-2">
+        <div className="h-3 bg-slate-100 rounded w-full animate-pulse" />
+        <div className="h-3 bg-slate-100 rounded w-full animate-pulse" />
+        <div className="h-3 bg-slate-100 rounded w-2/3 animate-pulse" />
+      </div>
+      <div className="mt-auto h-4 bg-slate-100 rounded w-1/4 animate-pulse" />
+    </div>
+  </div>
+);
 
 const About = () => {
   const { t } = useApp();
@@ -31,23 +59,32 @@ const About = () => {
 
 const Blog = () => {
   const { blogPosts, t } = useApp();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
   
   return (
     <AnimatedPage>
       <div className="max-w-7xl mx-auto py-16 px-4">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-4 tracking-tight text-slate-900">{t('inspirationTitle')}</h1>
+          <h1 className="text-4xl font-black mb-4 tracking-tight text-slate-900">{t('blog')}</h1>
           <p className="text-slate-500 max-w-2xl mx-auto text-lg">{t('inspirationSubtitle')}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {blogPosts.length > 0 ? blogPosts.map((post) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <BlogSkeleton key={i} />)
+          ) : blogPosts.length > 0 ? blogPosts.map((post) => (
             <article 
               key={post.id} 
-              className="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group overflow-hidden"
+              className="bg-white rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 flex flex-col group overflow-hidden h-full"
             >
+              {/* 1. Photo: Show only if post has a photo */}
               {post.images && post.images.length > 0 && (
-                <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                <div className="aspect-[16/10] overflow-hidden bg-slate-100">
                   <img 
                     src={post.images[0]} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
@@ -55,16 +92,19 @@ const Blog = () => {
                   />
                 </div>
               )}
+              
               <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                  <Calendar size={12} /> {post.date}
-                </div>
+                {/* 2. Title */}
                 <h2 className="text-xl font-bold text-slate-900 mb-3 leading-snug line-clamp-2 group-hover:text-violet-600 transition-colors">
                   {post.title}
                 </h2>
+                
+                {/* 3. Short Description */}
                 <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6">
                   {post.excerpt}
                 </p>
+                
+                {/* 4. Read More Link */}
                 <Link 
                   to={`/blog/${post.slug}`} 
                   className="mt-auto inline-flex items-center gap-2 text-violet-600 font-bold text-sm hover:translate-x-1 transition-transform"
@@ -74,7 +114,7 @@ const Blog = () => {
               </div>
             </article>
           )) : (
-            <div className="col-span-full text-center py-32 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+            <div className="col-span-full text-center py-32 bg-slate-50 rounded-[3.5rem] border-2 border-dashed border-slate-200">
                <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6 text-slate-300">
                   <BookOpen size={40} />
                </div>
@@ -151,17 +191,6 @@ const BlogPostDetail = () => {
     </AnimatedPage>
   );
 };
-
-const AnimatedPage = ({ children }: { children: React.ReactNode }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-  >
-    {children}
-  </motion.div>
-);
 
 const AppContent: React.FC = () => {
   const location = useLocation();

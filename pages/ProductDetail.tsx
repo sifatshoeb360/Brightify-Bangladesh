@@ -1,9 +1,9 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ShoppingBag, Zap, ArrowLeft, Star, Truck, 
-  ShieldCheck, Heart, Plus, Minus, Search, Send
+  ShieldCheck, Heart, Plus, Minus, Search, Send, Play
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { ProductCard } from './Home';
@@ -14,6 +14,7 @@ export const ProductDetail: React.FC = () => {
   const { products, addToCart, toggleWishlist, isInWishlist, addReview, currentUser, t } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [showVideo, setShowVideo] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews' | 'delivery'>('description');
   
   // Review form state
@@ -34,6 +35,15 @@ export const ProductDetail: React.FC = () => {
     products.filter(p => p.category === product?.category && p.id !== product?.id).slice(0, 4),
   [products, product]);
 
+  // If a video exists, show it by default
+  useEffect(() => {
+    if (product?.videoUrl) {
+      setShowVideo(true);
+    } else {
+      setShowVideo(false);
+    }
+  }, [product?.id]);
+
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center">
@@ -52,7 +62,7 @@ export const ProductDetail: React.FC = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageRef.current) return;
+    if (!imageRef.current || showVideo) return;
     const { left, top, width, height } = imageRef.current.getBoundingClientRect();
     const x = ((e.pageX - left - window.scrollX) / width) * 100;
     const y = ((e.pageY - top - window.scrollY) / height) * 100;
@@ -92,47 +102,72 @@ export const ProductDetail: React.FC = () => {
         <div className="space-y-4 relative">
           <div 
             ref={imageRef}
-            onMouseEnter={() => setIsZooming(true)}
-            onMouseLeave={() => setIsZooming(false)}
+            onMouseEnter={() => !showVideo && setIsZooming(true)}
+            onMouseLeave={() => !showVideo && setIsZooming(false)}
             onMouseMove={handleMouseMove}
-            className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm relative p-8 cursor-zoom-in"
+            className={`aspect-square rounded-[2rem] overflow-hidden bg-slate-50 border border-slate-100 shadow-sm relative ${!showVideo ? 'cursor-zoom-in' : ''} flex items-center justify-center`}
           >
-            <img 
-              src={product.images[activeImage]} 
-              alt={product.name} 
-              className="w-full h-full object-contain transition-transform duration-300 ease-out pointer-events-none" 
-              style={{
-                transform: isZooming ? 'scale(2)' : 'scale(1)',
-                transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
-              }}
-            />
+            {showVideo && product.videoUrl ? (
+              <video 
+                key={product.videoUrl}
+                controls 
+                className="w-full h-full object-contain bg-slate-900"
+                poster={product.images[0]}
+              >
+                <source src={product.videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            ) : (
+              <img 
+                src={product.images[activeImage]} 
+                alt={product.name} 
+                className="w-full h-full object-contain transition-transform duration-300 ease-out pointer-events-none p-8" 
+                style={{
+                  transform: isZooming ? 'scale(2)' : 'scale(1)',
+                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
+                }}
+              />
+            )}
+            
             {product.isNewArrival && (
               <span className="absolute top-6 left-6 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg z-10 pointer-events-none">
                 {t('newArrival')}
               </span>
             )}
-            {!isZooming && (
+            {!isZooming && !showVideo && (
               <div className="absolute bottom-6 right-6 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-400 opacity-60 pointer-events-none">
                 <Search size={16} />
               </div>
             )}
           </div>
-          {product.images.length > 1 && (
-            <div className="flex flex-wrap gap-4 justify-center">
-              {product.images.map((img, idx) => (
-                <button 
-                  key={idx} 
-                  onClick={() => {
-                    setActiveImage(idx);
-                    setIsZooming(false);
-                  }} 
-                  className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-violet-600 scale-95 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                >
-                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+          
+          <div className="flex flex-wrap gap-4 justify-center">
+            {/* Video Thumbnail */}
+            {product.videoUrl && (
+              <button 
+                onClick={() => setShowVideo(true)}
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all relative group flex items-center justify-center bg-slate-900 ${showVideo ? 'border-violet-600 scale-95 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              >
+                <img src={product.images[0]} alt="video thumb" className="w-full h-full object-cover opacity-30" />
+                <Play className="absolute text-white" size={24} fill="white" />
+              </button>
+            )}
+            
+            {/* Image Thumbnails */}
+            {product.images.map((img, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => {
+                  setActiveImage(idx);
+                  setShowVideo(false);
+                  setIsZooming(false);
+                }} 
+                className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${!showVideo && activeImage === idx ? 'border-violet-600 scale-95 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              >
+                <img src={img} alt="thumb" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col">

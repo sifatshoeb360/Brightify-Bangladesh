@@ -5,7 +5,8 @@ import {
   LayoutDashboard, ShoppingBag, Settings, Edit, Trash2, Plus, 
   CheckCircle, Package, Lock, LogOut, Eye, EyeOff, Users, 
   UserPlus, ExternalLink, X, Image as ImageIcon, Sparkles, Hash,
-  Mail, Key, ShieldAlert, Loader2, BookOpen, FileText, Tags, Wallet, Menu
+  Mail, Key, ShieldAlert, Loader2, BookOpen, FileText, Tags, Wallet, Menu,
+  Video
 } from 'lucide-react';
 import { Moderator, Product, BlogPost, Category } from '../types';
 import { Link } from 'react-router-dom';
@@ -53,6 +54,7 @@ export const Admin: React.FC = () => {
     description: '',
     category: '',
     images: ['', '', '', ''],
+    videoUrl: '',
     stock: 10,
     isFeatured: false,
     isNewArrival: true,
@@ -224,7 +226,7 @@ export const Admin: React.FC = () => {
 
   const openAddModal = () => {
     setEditingProductId(null);
-    setProductFormData({ name: '', price: 0, salePrice: undefined, description: '', category: categories[0]?.name || '', images: ['', '', '', ''], stock: 10, isFeatured: false, isNewArrival: true, tags: [] });
+    setProductFormData({ name: '', price: 0, salePrice: undefined, description: '', category: categories[0]?.name || '', images: ['', '', '', ''], videoUrl: '', stock: 10, isFeatured: false, isNewArrival: true, tags: [] });
     setIsProductModalOpen(true);
   };
 
@@ -232,7 +234,7 @@ export const Admin: React.FC = () => {
     setEditingProductId(product.id);
     const paddedImages = [...product.images];
     while (paddedImages.length < 4) paddedImages.push('');
-    setProductFormData({ ...product, images: paddedImages });
+    setProductFormData({ ...product, images: paddedImages, videoUrl: product.videoUrl || '' });
     setIsProductModalOpen(true);
   };
 
@@ -750,6 +752,9 @@ export const Admin: React.FC = () => {
                 </div>
               </div>
               <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><Video size={12} /> Product Video (Direct MP4 URL)</label>
+                <input type="url" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm mb-4" placeholder="https://example.com/video.mp4" value={productFormData.videoUrl} onChange={e => setProductFormData({...productFormData, videoUrl: e.target.value})} />
+                
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Product Gallery (URLs)</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[0, 1, 2, 3].map(idx => (

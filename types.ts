@@ -25,6 +25,7 @@ export interface Product {
   description: string;
   category: string;
   images: string[];
+  videoUrl?: string; // New field for product video
   stock: number;
   isFeatured: boolean;
   isNewArrival: boolean;
